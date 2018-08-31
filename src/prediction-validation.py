@@ -42,16 +42,18 @@ def parse_input_files(actual_file, predicted_file, window_file):
 	ret:
 		stocks_dict : {hour:{'stock_name':(value, Bool)}}
 		window: (int)
+		mihhour: (int) Minimum hour in actual file.
 		maxhour: (int) Maximum hour in actual file.
+
 	"""
 
 
 	# Stores stock values on hourly basis, where each hour has a dictionary.
 	# entry. Ex: stocks_dict[1] = {'name1':(value1, False), 'name2':(value2, False)}
-	# The second entry is to keep track whether stock was present in the actual
+	# The second entry is to keep track whether stock is present in both files.
 	# file
-
 	stocks_dict = {}
+
 	# Maximum hour and Minimum hour in our input
 	maxhour = None
 	minhour = None
