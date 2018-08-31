@@ -4,7 +4,7 @@ def parse_line(line):
 	"""
 	Parses lines in input files
 	param:
-		lines : [string] Input line
+		lines : (string) Input line
 	ret:
 		hour : (int) 
 		name : (string) Stock name
@@ -25,8 +25,11 @@ def sum_and_elements(hour, stocks_dict):
 	total = 0
 	count = 0
 	for key, value in stocks_dict[hour].items():
-		total += value
-		count += 1
+		# If stock was present in both files.
+		if value[1]:
+			# value[0] is the error in prediction value for that stock.
+			total += value[0]
+			count += 1
 	return (total, count)
 
 def parse_input_files(actual_file, predicted_file, window_file):
@@ -37,17 +40,21 @@ def parse_input_files(actual_file, predicted_file, window_file):
 		predicted_file: (string) path to predicted file.
 		window_file: (string) path to window file.
 	ret:
-		stocks_dict : {hour:{'stock_name':value}}
+		stocks_dict : {hour:{'stock_name':(value, Bool)}}
 		window: (int)
 		maxhour: (int) Maximum hour in actual file.
 	"""
 
 
-	# Stores stock values on hourly basis, where each hour has a dictionary
-	# entry. Ex: stocks_dict[1] = {'name1':value1, 'name2':value2}
+	# Stores stock values on hourly basis, where each hour has a dictionary.
+	# entry. Ex: stocks_dict[1] = {'name1':(value1, False), 'name2':(value2, False)}
+	# The second entry is to keep track whether stock was present in the actual
+	# file
+
 	stocks_dict = {}
-	# Maximum hour in our input
-	maxhour = 0
+	# Maximum hour and Minimum hour in our input
+	maxhour = None
+	minhour = None
 
 	# Read predicted values first as we need all of them
 	with open(predicted_file, "r") as f:
@@ -57,7 +64,10 @@ def parse_input_files(actual_file, predicted_file, window_file):
 			hour, name, value = parse_line(line)
 			if hour not in stocks_dict:
 				stocks_dict[hour] = {}
-			stocks_dict[hour][name] = value
+
+			# Add tuple (value, False). False because we do not know whether it
+			# is present in the actulaL file yet.
+			stocks_dict[hour][name] = (value, False)
 
 	# Read only relevant actual values
 	with open(actual_file, "r") as f:
@@ -69,10 +79,12 @@ def parse_input_files(actual_file, predicted_file, window_file):
 			if hour in stocks_dict:
 				if name in stocks_dict[hour]:
 					# Calculate and store the difference. (Error in prediction)
-					stocks_dict[hour][name] = abs(stocks_dict[hour][name] - value)
+					# Also make the entry True as it is present in both files.
+					stocks_dict[hour][name] = (abs(stocks_dict[hour][name][0] - value), True)
 			
-			# We need maxhour in actual file as we need to apply sliding window.
 			maxhour = hour;
+			if not minhour:
+				minhour = hour
 			line = f.readline()
 
 	# Read window file
@@ -80,7 +92,7 @@ def parse_input_files(actual_file, predicted_file, window_file):
 	with open(window_file, "r") as f:
 		window = int(f.read())
 
-	return (stocks_dict, window, maxhour)
+	return (stocks_dict, window, minhour, maxhour)
 
 
 def main():
@@ -96,15 +108,16 @@ def main():
 	output_file = sys.argv[4]
 
 
-	stocks_dict, window, maxhour = \
+	stocks_dict, window, minhour, maxhour = \
 				parse_input_files(actual_file, predicted_file, window_file)
 
 	# At this point:
 	# 
 	# stocks_dict: Has 'Error in prediction values' for
 	# each stock at a particular hour
-	# Ex: stocks_dict[1]: {'name1': error, 'name2': error}
+	# Ex: stocks_dict[1]: {'name1': (error, True), 'name2': (error, True)}
 	#
+	# minhour : Minimum hour to start sliding window from
 	# maxhour : Maximum hour to consider while calculating average
 
 
@@ -138,19 +151,19 @@ def main():
 	with open(output_file, "w") as f:
 		
 		# Separate for the first window
-		for i in range(1, window+1):
+		for i in range(minhour, minhour+window):
 			# Only consider valid hours
 			if sums[i] != -1:
 				current_sum += sums[i]
 				current_elements += counts[i]
 		
 		if current_elements != 0:
-			line = "{}|{}|{:.2f}\n".format(1, window, current_sum/current_elements)
+			line = "{}|{}|{:.2f}\n".format(minhour, minhour+window-1, current_sum/current_elements)
 		else:
-			line = "NA\n"
+			line = "{}|{}|NA\n".format(minhour, minhour+window-1)
 		f.write(line)
 
-		for start in range(2, maxhour-window+2):
+		for start in range(minhour+1, maxhour-window+2):
 			
 			end = start + window -1
 
@@ -168,7 +181,7 @@ def main():
 			if current_elements != 0:
 				line = "{}|{}|{:.2f}\n".format(start, end, current_sum/current_elements)
 			else:
-				line = "NA\n"
+				line = "{}|{}|NA\n".format(start, end)
 			f.write(line)
 
 if __name__ == "__main__":
