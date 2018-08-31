@@ -39,3 +39,6 @@ Problem: https://github.com/InsightDataScience/prediction-validation
   - Keep track of **sum of error values** and **count of stocks** in the current window. This helps in quickly calculating the average in the current window by just **removing the previous element** and **adding the next element**.
   
 ### 3) Optimizations
+  - As data scales and we are not able to read all the data at once, we can read both files hour by hour and add entries to the sum and count lists, which keep track of total error and count of valid values in each hour.
+  - We can maintain a **dequeue** instead of a sum and count lists and calculate sum only when required.
+  - The deque would include only those elements needed to calculate average for that hour.
