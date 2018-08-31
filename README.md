@@ -33,3 +33,9 @@ Problem: https://github.com/InsightDataScience/prediction-validation
   - We also make note of the maximum hour and minimum hour in the actual file, as this will be where the sliding window starts and ends.
   
 ### 2) Calculating Averages
+
+  - We create a **list of sum of error values of each hour**. Only those values present in both files are considered.
+  - We also maintain a list of count of valid error values to use in our average.
+  - Keep track of **sum of error values** and **count of stocks** in the current window. This helps in quickly calculating the average in the current window by just **removing the previous element** and **adding the next element**.
+  
+### 3) Optimizations
