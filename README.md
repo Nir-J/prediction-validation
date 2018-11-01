@@ -1,5 +1,5 @@
 # Prediction-Validation
-Coding challenge for Insight Fellowship
+Coding challenge for Insight Fellowship (Accepted)
 
 Problem: https://github.com/InsightDataScience/prediction-validation
 
